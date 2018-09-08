@@ -1,21 +1,19 @@
 package com.example.budjetics.parsingsms;
 
 import android.Manifest;
-import android.app.ListActivity;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.widget.Toast;
 
-import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+
+import static java.lang.Thread.currentThread;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,14 +21,31 @@ public class MainActivity extends AppCompatActivity {
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_main);
-            SmsObserver observer = new SmsObserver(new Handler(), this);
-            observer.queryLastSentSMS();
-            Uri inboxURI = Uri.parse("content://sms/inbox");
-
             // TODO rewrite required permission and test for API less then API 23
             checkPermission();
 
-            getContentResolver().registerContentObserver(inboxURI, true, observer);
+            SmsObserver observer = new SmsObserver(new Handler(), this, new Observer<String>() {
+                @Override
+                public void onSubscribe(Disposable d) {
+
+                }
+
+                @Override
+                public void onNext(String s) {
+                    Log.i("Test", currentThread().getName());
+                    Log.i("Test", s);
+                }
+
+                @Override
+                public void onError(Throwable e) {
+
+                }
+
+                @Override
+                public void onComplete() {
+
+                }
+            });
 
         }
 
