@@ -7,6 +7,11 @@ import android.os.Handler;
 import android.net.Uri;
 import android.util.Log;
 
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
+
+
 public class SmsObserver extends ContentObserver {
 
     private Context context;
@@ -36,31 +41,30 @@ public class SmsObserver extends ContentObserver {
 
     protected void queryLastSentSMS() {
 
-        new Thread(new Runnable() {
+        Observable.create(s -> {
 
-            @Override
-            public void run() {
-                Cursor cur =
-                        context.getContentResolver().query(uriSMS, null, null, null, null);
+            Cursor cur =
+                    context.getContentResolver().query(uriSMS, null, null, null, null);
+            if (cur.moveToNext()) {
 
-                if (cur.moveToNext()) {
-
-                    try {
-                        if (initialPos != getLastMsgId()) {
-                            // Here you get the last sms. Do what you want.
-                            String receiver = cur.getString(cur.getColumnIndex("address"));
-                            System.out.println(" Receiver Ph no :"+receiver);
-
-                            // Then, set initialPos to the current position.
-                            initialPos = getLastMsgId();
-                        }
-                    } catch (Exception e) {
-                        // Treat exception here
+                try {
+                    if (initialPos != getLastMsgId()) {
+                        // Here you get the last sms. Do what you want.
+                        String receiver = cur.getString(cur.getColumnIndex("address"));
+                        s.onNext(receiver);
+                        // Then, set initialPos to the current position.
+                        initialPos = getLastMsgId();
                     }
+                } catch (Exception e) {
+                    // Treat exception here
                 }
-                cur.close();
             }
-        }).start();
+            cur.close();
+            s.onComplete();
+        })
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(address -> Log.i("Test", String.valueOf(address)));
 
     }
 

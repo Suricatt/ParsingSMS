@@ -32,21 +32,6 @@ public class MainActivity extends AppCompatActivity {
 
             getContentResolver().registerContentObserver(inboxURI, true, observer);
 
-            Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
-                                                                   @Override
-
-                                                                   public void subscribe(ObservableEmitter<Integer> e) throws Exception {
-                                                                       //Use onNext to emit each item in the stream//
-                                                                       e.onNext(1);
-                                                                       e.onNext(2);
-                                                                       e.onNext(3);
-                                                                       e.onNext(4);
-
-                                                                       //Once the Observable has emitted all items in the sequence, call onComplete//
-                                                                       e.onComplete();
-                                                                   }
-                                                               }
-            );
         }
 
     private void checkPermission() {
