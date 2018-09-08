@@ -11,6 +11,12 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
+
 public class MainActivity extends AppCompatActivity {
 
         @Override
@@ -25,6 +31,22 @@ public class MainActivity extends AppCompatActivity {
             checkPermission();
 
             getContentResolver().registerContentObserver(inboxURI, true, observer);
+
+            Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
+                                                                   @Override
+
+                                                                   public void subscribe(ObservableEmitter<Integer> e) throws Exception {
+                                                                       //Use onNext to emit each item in the stream//
+                                                                       e.onNext(1);
+                                                                       e.onNext(2);
+                                                                       e.onNext(3);
+                                                                       e.onNext(4);
+
+                                                                       //Once the Observable has emitted all items in the sequence, call onComplete//
+                                                                       e.onComplete();
+                                                                   }
+                                                               }
+            );
         }
 
     private void checkPermission() {
