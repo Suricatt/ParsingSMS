@@ -8,7 +8,12 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.Date;
 
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
@@ -17,6 +22,9 @@ import static java.lang.Thread.currentThread;
 
 public class MainActivity extends AppCompatActivity {
 
+        ArrayList<String> test;
+        ArrayAdapter<String> adapter;
+
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
@@ -24,16 +32,24 @@ public class MainActivity extends AppCompatActivity {
             // TODO rewrite required permission and test for API less then API 23
             checkPermission();
 
-            SmsObserver observer = new SmsObserver(new Handler(), this, new Observer<String>() {
+            //!ПЛОХОЙ КОД
+            test = new ArrayList<String>();
+            ListView listView = (ListView) findViewById(R.id.list);
+            adapter= new ArrayAdapter<String>(this,   android.R.layout.simple_list_item_1, test);
+            listView.setAdapter(adapter);
+
+            //TODO разобраться с потоками. Возможно будет перенести в Sheduler.io
+            SmsObserver observer = new SmsObserver(new Handler(), getContentResolver(), new Date(), new Observer<String[]>() {
                 @Override
                 public void onSubscribe(Disposable d) {
 
                 }
 
                 @Override
-                public void onNext(String s) {
-                    Log.i("Test", currentThread().getName());
-                    Log.i("Test", s);
+                public void onNext(String[] strings) {
+                    //TODO нет проверки на пустоту
+                    test.add(strings[0]);
+                    adapter.notifyDataSetChanged();
                 }
 
                 @Override
