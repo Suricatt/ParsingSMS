@@ -8,9 +8,9 @@ import android.net.Uri;
 import android.util.Log;
 
 import io.reactivex.Observable;
+import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
-
 
 public class SmsObserver extends ContentObserver {
 
@@ -18,16 +18,27 @@ public class SmsObserver extends ContentObserver {
     private static int initialPos;
     private static final String TAG = "SMSContentObserver";
     private static final Uri uriSMS = Uri.parse("content://sms/inbox");
+    private final Observer<String> observer;
 
-    public SmsObserver(Handler handler, Context context) {
+    /**
+     * @param handler
+     * @param context
+     * @param observer
+     */
+    public SmsObserver(Handler handler, Context context, Observer<String> observer) {
         super(handler);
         this.context = context;
+        this.observer = observer;
+        context.getContentResolver().registerContentObserver(uriSMS, true, this);
     }
 
     @Override
     public void onChange(boolean selfChange){
         super.onChange(selfChange);
-        queryLastSentSMS();
+        queryLastSentSMS()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(observer);
     }
 
     public int getLastMsgId() {
@@ -39,9 +50,9 @@ public class SmsObserver extends ContentObserver {
         return lastMsgId;
     }
 
-    protected void queryLastSentSMS() {
+    protected Observable<String> queryLastSentSMS() {
 
-        Observable.create(s -> {
+        return Observable.create(s -> {
 
             Cursor cur =
                     context.getContentResolver().query(uriSMS, null, null, null, null);
@@ -61,10 +72,7 @@ public class SmsObserver extends ContentObserver {
             }
             cur.close();
             s.onComplete();
-        })
-        .subscribeOn(Schedulers.io())
-        .observeOn(AndroidSchedulers.mainThread())
-        .subscribe(address -> Log.i("Test", String.valueOf(address)));
+        });
 
     }
 
