@@ -16,6 +16,7 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.BehaviorSubject;
 
 public class SmsObserver extends ContentObserver {
 
@@ -24,29 +25,29 @@ public class SmsObserver extends ContentObserver {
     private static int initialPos;
     private static final String TAG = "SMSContentObserver";
     private static final Uri uriSMS = Uri.parse("content://sms/inbox");
-    private final Observer<String[]> observer;
+    private final BehaviorSubject<String[]> source;
 
     /**
      * @param handler
      * @param content
      * @param startDate
-     * @param observer
      */
-    public SmsObserver(Handler handler, ContentResolver content, Date startDate, Observer<String[]> observer) {
+    public SmsObserver(Handler handler, ContentResolver content, Date startDate) {
         super(handler);
         this.content = content;
-        this.observer = observer;
         this.startDate = String.valueOf(startDate.getTime());
         content.registerContentObserver(uriSMS, true, this);
+        source = BehaviorSubject.create();
+    }
+
+    public BehaviorSubject<String[]> getSource(){
+        return source;
     }
 
     @Override
     public void onChange(boolean selfChange){
         super.onChange(selfChange);
-        getSMSFromDate(startDate)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(observer);
+        getSMSFromDate(startDate);
     }
 
     public int getLastMsgId() {
@@ -58,25 +59,22 @@ public class SmsObserver extends ContentObserver {
         return lastMsgId;
     }
 
-    protected Observable<String[]> getSMSFromDate(String date) {
+    private void getSMSFromDate(String date) {
 
-        return Observable.create(s -> {
-            Cursor cur =
-                    content.query(uriSMS, new String[]{"_ID", "date", "body", "address"}, "date > ?", new String[]{date}, null);
-            while (cur.moveToNext()) {
+        Cursor cur =
+                content.query(uriSMS, new String[]{"_ID", "date", "body", "address"}, "date > ?", new String[]{date}, null);
+        while (cur.moveToNext()) {
 
-                try {
-                    String body = cur.getString(cur.getColumnIndex("body"));
-                    String address = cur.getString(cur.getColumnIndex("address"));
-                    s.onNext(new String[]{body, address});
-                    startDate = cur.getString(cur.getColumnIndex("date"));
-                } catch (Exception e) {
-                    // Treat exception here
-                }
+            try {
+                String body = cur.getString(cur.getColumnIndex("body"));
+                String address = cur.getString(cur.getColumnIndex("address"));
+                source.onNext(new String[]{body, address});
+                startDate = cur.getString(cur.getColumnIndex("date"));
+            } catch (Exception e) {
+                // Treat exception here
             }
-            cur.close();
-            s.onComplete();
-        });
+        }
+        cur.close();
 
     }
 

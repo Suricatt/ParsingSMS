@@ -39,30 +39,12 @@ public class MainActivity extends AppCompatActivity {
             listView.setAdapter(adapter);
 
             //TODO разобраться с потоками. Возможно будет перенести в Sheduler.io
-            SmsObserver observer = new SmsObserver(new Handler(), getContentResolver(), new Date(), new Observer<String[]>() {
-                @Override
-                public void onSubscribe(Disposable d) {
-
-                }
-
-                @Override
-                public void onNext(String[] strings) {
-                    //TODO нет проверки на пустоту
-                    test.add(strings[0]);
-                    adapter.notifyDataSetChanged();
-                }
-
-                @Override
-                public void onError(Throwable e) {
-
-                }
-
-                @Override
-                public void onComplete() {
-
-                }
-            });
-
+            SmsObserver smsSource = new SmsObserver(new Handler(), getContentResolver(), new Date());
+            smsSource.getSource()
+                .subscribe(s->{
+                   test.add(s[0]);
+                   adapter.notifyDataSetChanged();
+                });
         }
 
     private void checkPermission() {
